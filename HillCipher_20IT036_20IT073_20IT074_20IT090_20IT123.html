@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HillCipher</title>
+</head>
+<body>
+    <div class="content">
+        <h4 id="title">HillCipher Implementation</h4><br>
+        
+        <form id='input-form1' action="" method="post" class="form"> 
+            <h2 style="color:grey;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;padding: 1rem;">Encryption Of Plaintext</h2>
+            <label class="label">Enter the Plaintext:</label>
+            <input type="text" name="pt" id="pt" required><br>
+            <label class="label">Enter your Key:</label>
+            <input type="text" name="key1" id="key1" required><br><br>
+            <button type="submit" class="btn">CALCULATE</button>
+            <h3 style="color:grey;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;padding: 1rem;">Result:</h3>
+            <label class="label">Cipher Text:</label>
+            <input type="text" id="result1" readonly><Br>
+        </form>
+
+        <form id='input-form2' action="" method="post" class="form"> 
+            <h2 style="color:grey;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;padding: 1rem;">Decryption Of Ciphertext</h2>
+            <label class="label">Enter the Ciphertext:</label>
+            <input type="text" name="ct" id="ct" required><br>
+            <label class="label">Enter your Key:</label>
+            <input type="text" name="key2" id="key2" required><br><br>
+            <button type="submit" class="btn">CALCULATE</button>
+            <h3 style="color:grey;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;padding: 1rem;">Result:</h3>
+            <label class="label">Plain Text:</label>
+            <input type="text" id="result2" readonly><Br>
+        </form>
+
+        <form id='input-form3' action="" method="post" class="form"> 
+            <h2 style="color:grey;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;padding: 1rem;">Known Plaintext Ciphertext Attack</h2>
+            <label class="label">Enter the dimension of key matrix:</label>
+            <input type="text" name="dk" id="dk" required><br>
+            <label class="label">Enter known plaintext:</label>
+            <input type="text" name="kpt" id="kpt" required><br><br>
+            <label class="label">Known plaintext starting position:</label>
+            <input type="text" name="kstart" id="kstart" required><br><br>
+            <label class="label">Known plaintext ending position:</label>
+            <input type="text" name="kend" id="kend" required><br><br>
+            <label class="label">Enter the Ciphertext:</label>
+            <input type="text" name="kct" id="kct" required><br><br>
+            <button type="submit" class="btn">CALCULATE</button>
+            <h3 style="color:grey;font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;padding: 1rem;">Result:</h3>
+            <label class="label">Plain Text:</label>
+            <input type="text" id="result3" readonly><Br>
+        </form>
+        
+
+        
+    </div>
+
+</body>
+<script>
+    const ALPHABET="abcdefghijklmnopqrstuvwxyz";
+
+    // change numeric array to string array
+    function array_to_string(array, n1, n2)
+    {
+        var x="";
+        for (let i=0; i < n2; i++)
+        {
+            for (let j=0; j < n1; j++)
+            {
+                x=x+ALPHABET.charAt(array[j][i]);
+                //console.log(this.ALPHABET.charAt(array[j][i]));
+            }
+        }
+        return x;
+    }
+
+    // convert the input string to character array
+    function plainconvert(plainarray, kn, pn)
+    {
+        var plainmatrix = Array(kn).fill(0).map(()=>new Array(pn).fill(0));
+        var k = 0;
+        for (let i=0; i < pn; i++)
+        {
+            for (let j=0; j < kn; j++)
+            {
+                if (k < plainarray.length)
+                {
+                    plainmatrix[j][i] = ALPHABET.indexOf(plainarray[k]);
+                    k++;
+                }
+                else 
+                {
+                    plainmatrix[j][i] = ALPHABET.indexOf("x");
+                    k++;
+                }
+            }
+        }
+        return plainmatrix;
+    }
+
+    // arrange elements in key matrix
+    function keyconvert(keyarray, kn)
+    {
+        var keymatrix = Array(kn).fill(0).map(()=>new Array(kn).fill(0));
+        var l = 0;
+        for (let i=0; i < kn; i++)
+        {
+            for (let j=0; j < kn; j++)
+            {
+                keymatrix[j][i] = ALPHABET.indexOf(keyarray[l]);
+                l++;
+            }
+        }
+        return keymatrix;
+    }
+
+    // multiply key and plain text
+    function operation(matrix1, matrix2, n1, n2)
+    {
+        var outputmatrix = Array(n1).fill(0).map(()=>new Array(n2).fill(0));
+        for (let i=0; i < n1; i++)
+        {
+            for (let j=0; j < n2; j++)
+            {
+                var c = 0;
+                for (let k=0; k < n1; k++)
+                {
+                    c += matrix2[i][k] * matrix1[k][j];
+                }
+                outputmatrix[i][j] = c % 26;
+                if (outputmatrix[i][j] < 0)
+                {
+                    outputmatrix[i][j] = ALPHABET.length + outputmatrix[i][j];
+                }
+            }
+        }
+        return outputmatrix;
+    }
+
+    // get the inverse of a matrix
+    function matrixinverse(matrix, dim, od)
+    {
+        var d = 0;
+        var adjmatrix = Array(dim).fill(0).map(()=>new Array(od).fill(0));
+        if (dim == 3)
+        {
+            d = ((matrix[0][0]) * ((matrix[1][1]) * (matrix[2][2]) - (matrix[1][2]) * (matrix[2][1]))) - ((matrix[0][1]) * ((matrix[1][0]) * (matrix[2][2]) - (matrix[1][2]) * (matrix[2][0]))) + ((matrix[0][2]) * ((matrix[1][0]) * (matrix[2][1]) - (matrix[1][1]) * (matrix[2][0])));
+            d = d % 26;
+            if (d < 0)
+            {
+                d = ALPHABET.length + d;
+            }
+            d = this.euclids_algo(d);
+            adjmatrix[0][0] = (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) * d;
+            adjmatrix[0][1] = -1 * (matrix[0][1] * matrix[2][2] - matrix[0][2] * matrix[2][1]) * d;
+            adjmatrix[0][2] = (matrix[0][1] * matrix[1][2] - matrix[0][2] * matrix[1][1]) * d;
+            adjmatrix[1][0] = -1 * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) * d;
+            adjmatrix[1][1] = (matrix[0][0] * matrix[2][2] - matrix[0][2] * matrix[2][0]) * d;
+            adjmatrix[1][2] = -1 * (matrix[0][0] * matrix[1][2] - matrix[0][2] * matrix[1][0]) * d;
+            adjmatrix[2][0] = (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]) * d;
+            adjmatrix[2][1] = -1 * (matrix[0][0] * matrix[2][1] - matrix[0][1] * matrix[2][0]) * d;
+            adjmatrix[2][2] = (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) * d;
+        }
+        else if (dim == 2)
+        {
+            d = ((matrix[0][0]) * (matrix[1][1]) - (matrix[0][1]) * (matrix[1][0]));
+            d = d % 26;
+            if (d < 0)
+            {
+                d = ALPHABET.length + d;
+            }
+            d = this.euclids_algo(d);
+            adjmatrix[0][0] = matrix[1][1] * d;
+            adjmatrix[0][1] = -1 * matrix[0][1] * d;
+            adjmatrix[1][0] = -1 * matrix[1][0] * d;
+            adjmatrix[1][1] = matrix[0][0] * d;
+        }
+        else if (dim == 1)
+        {
+            d = matrix[0][0];
+            d = d % 26;
+            if (d < 0)
+            {
+                d = ALPHABET.length + d;
+            }
+            d = this.euclids_algo(d);
+            adjmatrix[0][0] = matrix[0][0] * d;
+        }
+        for (let i=0; i < dim; i++)
+        {
+            for (let j=0; j < od; j++)
+            {
+                if (adjmatrix[i][j] < 0)
+                {
+                    adjmatrix[i][j] = ALPHABET.length + adjmatrix[i][j];
+                }
+            }
+        }
+        return adjmatrix;
+    }
+
+    // inverse of determinant of key
+    function euclids_algo(num)
+    {
+        var a = 26;
+        var b = num;
+        var q = 0;
+        var r = 0;
+        var t1 = 0;
+        var t2 = 1;
+        var t = 0;
+        while (b != 0)
+        {
+            q = parseInt(a / b);
+            r = a % b;
+            a = b;
+            b = r;
+            t = t1 - q * t2;
+            t1 = t2;
+            t2 = t;
+        }
+        if (a == 1)
+        {
+            return t1;
+        }
+        else 
+        {
+            return 0;
+        }
+    }
+
+    const myform1=document.getElementById('input-form1');
+    myform1.addEventListener('submit',(e)=>{
+        e.preventDefault();
+        var pt=document.getElementById('pt').value;
+        var key1=document.getElementById('key1').value;
+        
+        var keydimension = 0;
+        var plaindimension = 0;
+        var dimensionfloat = 0.0;
+        var plainmatrix = [];
+        var ciphermatrix = [];
+        var keymatrix = [];
+        
+        var plainarray = pt.split("");
+        var keyarray = key1.split("");
+
+        keydimension = parseInt(Math.sqrt(key1.length));
+        dimensionfloat = parseInt(Math.sqrt(key1.length));
+        plaindimension = parseInt(Math.ceil(pt.length / dimensionfloat));
+        plainmatrix = plainconvert(plainarray, keydimension, plaindimension);
+        keymatrix = keyconvert(keyarray, keydimension);
+        ciphermatrix = operation(plainmatrix, keymatrix, keydimension, plaindimension);
+        var x=array_to_string(ciphermatrix, keydimension, plaindimension);
+        document.getElementById('result1').value=x;
+
+    });
+
+    const myform2=document.getElementById('input-form2');
+    myform2.addEventListener('submit',(e)=>{
+        e.preventDefault();
+        var ct=document.getElementById('ct').value;
+        var key1=document.getElementById('key2').value;
+
+        var keydimension = 0;
+        var cipherdimension = 0;
+        var dimensionfloat = 0.0;
+        var plainmatrix = [];
+        var ciphermatrix = [];
+        var keymatrix = [];
+
+        var cipherarray = ct.split("");
+        var keyarray = key1.split("");
+
+        keydimension = parseInt(Math.sqrt(key1.length));
+        dimensionfloat = parseInt(Math.sqrt(key1.length));
+        cipherdimension = parseInt(Math.ceil(ct.length / dimensionfloat));
+        ciphermatrix = plainconvert(cipherarray, keydimension, cipherdimension);
+        keymatrix = keyconvert(keyarray, keydimension);
+        var keyinverse = matrixinverse(keymatrix, keydimension, cipherdimension);
+        var a = 0;
+        var b = 0;
+    
+        for (let i=0; i < keydimension; i++)
+        {
+            for (let j=0; j < cipherdimension; j++)
+            {
+                a=a+1;
+                if (keyinverse[i][j] == 0)
+                {
+                    b=b+1;
+                }
+            }
+        }
+        if (a!=b)
+        {
+            plainmatrix=operation(ciphermatrix,keyinverse,keydimension,cipherdimension);
+            var x=array_to_string(plainmatrix, keydimension, cipherdimension);
+            document.getElementById('result2').value=x;
+        
+        }
+        else 
+        {
+            var x="Inverse of key doesn't exist. Decryption of Cipher Text cannot be done";
+            document.getElementById('result2').value=x;
+        }
+    });
+
+    const myform3=document.getElementById('input-form3');
+    myform3.addEventListener('submit',(e)=>{
+        e.preventDefault();
+        var keydimension1=document.getElementById('dk').value;
+        var knownplain=document.getElementById('kpt').value;
+        var start1=document.getElementById('kstart').value;
+        var end1=document.getElementById('kend').value;
+        var ciphertext=document.getElementById('kct').value;
+        
+        keydimension=parseInt(keydimension1);
+        start=parseInt(start1);
+        end=parseInt(end1);
+        var knownplainarray = knownplain.split("");
+        var cipher_full = ciphertext.split("");
+        var dim = keydimension;
+        var dimension = parseInt(Math.ceil(ciphertext.length / dim));
+        var knowncipherarray = [];
+
+        var counter = 0;
+        for (let i=start-1; i < end && counter < keydimension * keydimension; i++)
+        {
+            knowncipherarray[counter] = cipher_full[i];
+            counter++;
+        }
+        var knownplainmatrix = keyconvert(knownplainarray, keydimension);
+        var knownciphermatrix = keyconvert(knowncipherarray, keydimension);
+        ciphermatrix = plainconvert(cipher_full, keydimension, dimension);
+        var cipherinverse = matrixinverse(knownciphermatrix, keydimension, keydimension);
+        keyinverse = operation(cipherinverse, knownplainmatrix, keydimension, keydimension);
+        plainmatrix = operation(ciphermatrix, keyinverse, keydimension, dimension);
+        var x=array_to_string(plainmatrix, keydimension,dimension);
+        document.getElementById('result3').value=x;
+
+    });
+
+</script>
+<style>
+    body{
+        margin-left: 1rem;
+    }
+    .form{
+        padding:0.5rem;
+        margin:1rem;
+        margin-left:25%;
+        background-color:azure;
+        border: 0.1rem none;
+        border-radius: 0.5rem;
+        width:50%;
+    }
+    
+    #title{
+        text-align: center;
+        font-size:1.6rem;
+        text-transform:uppercase ;
+        color:slategray;
+    }
+    .label{
+        margin-bottom: 2rem;
+        margin-right: 1.5rem;
+        padding: 1rem;
+        color:rgba(28, 28, 31, 0.667);
+        font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+    
+    .btn{
+        padding: 0.5rem;
+        margin-left:0.5rem;
+        border-radius:0.5rem;
+        background-color:cornflowerblue;
+        border: 0.1rem groove #fffcf2;
+        font-size: .7rem;
+        color:white;
+        font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    }
+    .btn:hover{
+        background-color:#007Bee;
+        border: 0.1rem groove,#8ab47e78;
+    }
+    
+</style>
+</html>
